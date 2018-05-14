@@ -10,8 +10,16 @@ app.use(bodyParser.json())
 //返回的对象是一个键值对，当extended为false的时候，键值对中的值就为'String'或'Array'形式，为true的时候，则可为任何数据类型。
 app.use(bodyParser.urlencoded({ extended: true }))
 
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:8080')
+    res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, token')
+    res.header('Access-Control-Allow-Methods', 'GET, POST')
+    next()
+})
+
 //路由
 routers(app)
+
 
 mongoose.connect(config.mongodbURL, (err) => {
     if (err) {
