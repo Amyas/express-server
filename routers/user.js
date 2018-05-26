@@ -6,7 +6,7 @@ const checkToken = require('../middleware/checkToken')
 const User = require('../models/User')
 
 //*获取用户列表
-router.get('/list', checkToken, async (req, res, next) => {
+router.get('/list', async (req, res, next) => {
     const list = await User
         .find()
         .catch(e => {
@@ -22,11 +22,12 @@ router.get('/list', checkToken, async (req, res, next) => {
 })
 
 //*创建用户
-router.post('/create', checkToken, async (req, res, next) => {
+router.post('/create', async (req, res, next) => {
     const {
         nickname,
         username,
         password,
+        repassword
     } = req.body
 
     //校验参数
@@ -36,6 +37,12 @@ router.post('/create', checkToken, async (req, res, next) => {
         }
         if (!password) {
             throw new Error('请输入密码！')
+        }
+        if (!repassword) {
+            throw new Error('请输入确认密码！')
+        }
+        if (password !== repassword) {
+            throw new Error('两次密码输入不一致！')
         }
         const user = await User.findOne({ username })
         if (user) {
@@ -57,15 +64,13 @@ router.post('/create', checkToken, async (req, res, next) => {
     })
 
     //将用户添加到数据库中
-    await user
-        .save()
+    await user.save()
         .catch(e => {
             res.status(500).json({
                 message: e.message
             })
             return
         })
-
 
     res.json({
         code: 201,
@@ -74,6 +79,10 @@ router.post('/create', checkToken, async (req, res, next) => {
             user
         }
     })
+
+
+
+   
 
 })
 
@@ -147,5 +156,6 @@ router.post('/update', checkToken, async (req, res, next) => {
         message: '修改成功!'
     })
 })
+
 
 module.exports = router

@@ -6,6 +6,7 @@ const createToken = require('../middleware/createToken')
 //数据不存在=404
 
 module.exports = function (app) {
+    let minaData = '';
     //登录
     app.post('/api/login', async (req, res, next) => {
         const { username, password } = req.body
@@ -52,4 +53,16 @@ module.exports = function (app) {
     })
 
     app.use('/api/user', require('./user'))
+    app.use('/api/posts', require('./posts'))
+
+    app.post('/mina',async(req,res,next)=>{
+        minaData = req.body
+        res.send('ok')
+    })
+
+    app.get('/mina',async(req,res,next)=>{
+        res.json({
+            data:minaData
+        })
+    })
 }
