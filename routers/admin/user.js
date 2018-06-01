@@ -1,12 +1,12 @@
 const express = require('express')
 const router = express.Router()
 const mongoose = require('mongoose')
-const createToken = require('../middleware/createToken')
-const checkToken = require('../middleware/checkToken')
-const User = require('../models/User')
+const createToken = require('../../middleware/createToken')
+const checkToken = require('../../middleware/checkToken')
+const User = require('../../models/User')
 
 //*获取用户列表
-router.get('/list', async (req, res, next) => {
+router.get('/list', checkToken, async (req, res, next) => {
     const list = await User
         .find()
         .catch(e => {
@@ -22,27 +22,23 @@ router.get('/list', async (req, res, next) => {
 })
 
 //*创建用户
-router.post('/create', async (req, res, next) => {
+router.post('/create', checkToken, async (req, res, next) => {
     const {
         nickname,
         username,
         password,
-        repassword
     } = req.body
 
     //校验参数
     try {
+        if (!nickname) {
+            throw new Error('请输入昵称！')
+        }
         if (!username) {
             throw new Error('请输入用户名！')
         }
         if (!password) {
             throw new Error('请输入密码！')
-        }
-        if (!repassword) {
-            throw new Error('请输入确认密码！')
-        }
-        if (password !== repassword) {
-            throw new Error('两次密码输入不一致！')
         }
         const user = await User.findOne({ username })
         if (user) {
@@ -55,44 +51,37 @@ router.post('/create', async (req, res, next) => {
         return
     }
 
-    //创建用户
-    const user = new User({
-        nickname,
-        username,
-        password,
-        token: createToken(username)
-    })
-
-    //将用户添加到数据库中
-    await user.save()
-        .catch(e => {
-            res.status(500).json({
-                message: e.message
-            })
-            return
+    try {
+        const user = new User({
+            nickname,
+            username,
+            password
         })
 
-    res.json({
-        code: 201,
-        message: '创建成功',
-        data: {
-            user
-        }
-    })
+        await user.save()
 
-
-
-   
+        res.json({
+            code: 201,
+            message: '创建成功',
+            data: {
+                user
+            }
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: e.message
+        })
+    }
 
 })
 
 //*删除用户
-router.post('/remove', checkToken, async (req, res, next) => {
-    const { _id } = req.body
+router.get('/remove', checkToken, async (req, res, next) => {
+    const { id } = req.query
 
     //校验参数
     const user = await User
-        .findById({ _id })
+        .findById({ _id: id })
         .catch(e => {
             res.status(500).json({
                 message: e.message
@@ -135,7 +124,7 @@ router.post('/update', checkToken, async (req, res, next) => {
         if (!userInfo) {
             throw new Error('该账号不存在')
         }
-        if(userInfo.length > 1){
+        if (userInfo.length > 1) {
             throw new Error('账号重复')
         }
     } catch (e) {
